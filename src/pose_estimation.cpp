@@ -30,16 +30,19 @@ public:
     {
         pose_estimation_ = new PoseEstimation();
         // *** USE KOBUKI ENCODERS
-        encoder_subscriber = n.subscribe("/kobuki/encoders", 1, &PoseEstimation::encoderCallback,this);
-        //encoder_subscriber = n.subscribe("/arduino/encoders", 1, &PoseEstimation::encoderCallback,this);
+        //encoder_subscriber = n.subscribe("/kobuki/encoders", 1, &PoseEstimation::encoderCallback,this);
+        encoder_subscriber = n.subscribe("/arduino/encoders", 1, &PoseEstimation::encoderCallback,this);
         odometry_publisher = n.advertise<ras_arduino_msgs::Odometry>("/arduino/odometry", 1);
     }
 
     void getInitialPose()
     {
-        n.getParam("x0",x_prime);
-        n.getParam("y0",y_prime);
-        n.getParam("theta0",theta_prime);
+        //n.getParam("x0",x_prime);
+        //n.getParam("y0",y_prime);
+        //n.getParam("theta0",theta_prime);
+        x_prime=0;
+        y_prime=0;
+        theta_prime=0;
 
     }
 
@@ -51,12 +54,12 @@ public:
         double delta_enc2=enc_msg->delta_encoder2;
         double sampleTime=0.1;
         // RADIO AND BASE FOR KOBUKI
-        double b=0.23;
-        double r=0.0352;
+        //double b=0.23;
+        //double r=0.0352;
 
         // RADIO AND BASE FOR OUR ROBOT
-        //double b=0.21;
-        //double r=0.05;
+        double b=0.21;
+        double r=0.05;
         
         double AngVelLeft=(delta_enc2*(M_PI/180))/sampleTime;
         double AngVelRight=(delta_enc1*(M_PI/180))/sampleTime;
