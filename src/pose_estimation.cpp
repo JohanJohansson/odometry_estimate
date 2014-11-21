@@ -12,7 +12,7 @@ public:
     ros::Subscriber velocity_twist_subscriber;
     ros::Subscriber encoder_subscriber;
     ros::Publisher odometry_publisher;
-    double x_t, y_t, theta_t;
+    double x_t, y_t, theta_t_unbounded, theta_t, theta_prime_unbound;
     double x_prime, y_prime, theta_prime;
 
     PoseEstimation()
@@ -31,6 +31,7 @@ public:
         pose_estimation_ = new PoseEstimation();
         // *** USE KOBUKI ENCODERS
         //encoder_subscriber = n.subscribe("/kobuki/encoders", 1, &PoseEstimation::encoderCallback,this);
+        // *** USE OUR ROBOT ENCODERS
         encoder_subscriber = n.subscribe("/arduino/encoders", 1, &PoseEstimation::encoderCallback,this);
         odometry_publisher = n.advertise<ras_arduino_msgs::Odometry>("/arduino/odometry", 1);
     }
@@ -48,11 +49,11 @@ public:
 
     void encoderCallback(const ras_arduino_msgs::Encoders::ConstPtr &enc_msg)
     {
-        double enc1=enc_msg->encoder1;
-        double enc2=enc_msg->encoder2;
-        double delta_enc1=enc_msg->delta_encoder1;
-        double delta_enc2=enc_msg->delta_encoder2;
-        double sampleTime=0.1;
+        double enc1 = enc_msg->encoder1;
+        double enc2 = enc_msg->encoder2;
+        double delta_enc1 = enc_msg->delta_encoder1;
+        double delta_enc2 = enc_msg->delta_encoder2;
+        double sampleTime = 0.1;
         // RADIO AND BASE FOR KOBUKI
         //double b=0.23;
         //double r=0.0352;
@@ -60,14 +61,23 @@ public:
         // RADIO AND BASE FOR OUR ROBOT
         double b=0.21;
         double r=0.05;
-        
-        double AngVelLeft=(delta_enc2*(M_PI/180))/sampleTime;
-        double AngVelRight=(delta_enc1*(M_PI/180))/sampleTime;
-        
+        if(delta_enc1 - delta_enc2 > 3)
+            ROS_INFO("bigger delta enc1");
+        if(delta_enc2 - delta_enc1 > 3)
+            ROS_INFO("dbigger delta enc2");
+
+        //Check which delta encoder corresponds to right and left
+        double AngVelLeft =(delta_enc2 * (M_PI/180))/sampleTime;
+        //ROS_INFO("AngVelRight %f", AngVelRight);
+        double AngVelRight =(delta_enc1 * (M_PI/180))/sampleTime;
+        //ROS_INFO("AngVelLeft %f", AngVelLeft);
+
+
         // Pose estimate according to formulas from file of Lab3
         x_t = ((-(r*sin(theta_prime))/2)*AngVelLeft + (-(r*sin(theta_prime))/2)*AngVelRight)*sampleTime;
         y_t = (((r*cos(theta_prime))/2)*AngVelLeft + ((r*cos(theta_prime))/2)*AngVelRight)*sampleTime;
-        theta_t = ((-r/b)*AngVelLeft + (r/b)*AngVelRight)*sampleTime;
+        theta_t_unbounded = ((-r/b)*AngVelLeft + (r/b)*AngVelRight)*sampleTime;
+        theta_t = angleBoundaries(theta_t_unbounded);
 
     }
 
@@ -78,8 +88,12 @@ public:
         // odometry values should be "double"
         x_prime = x_prime + x_t;
         y_prime = y_prime + y_t;
-        theta_prime = theta_prime + theta_t;
+        theta_prime_unbound = theta_prime_unbound + theta_t;
+        //ROS_INFO("Ubounded theta %f", theta_prime_unbound);
+        theta_prime = angleBoundaries(theta_prime_unbound);
+        //ROS_INFO("theta_prime %f", theta_prime);
 
+        //Publish message
         odom_msg.x = x_prime;
         odom_msg.y = y_prime;
         odom_msg.theta = theta_prime;
@@ -90,6 +104,15 @@ public:
 private:
 
     PoseEstimation *pose_estimation_;
+
+    double angleBoundaries(double theta)
+    {
+        if (theta>0)
+            theta = fmod(theta + M_PI, 2.0 * M_PI) - M_PI;
+        else
+            theta = fmod(theta - M_PI, 2.0 * M_PI) + M_PI;
+        return theta;
+    }
 
 };
 
