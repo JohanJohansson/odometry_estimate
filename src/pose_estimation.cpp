@@ -76,6 +76,7 @@ public:
         // Pose estimate according to formulas from file of Lab3
         x_t = ((-(r*sin(theta_prime))/2)*AngVelLeft + (-(r*sin(theta_prime))/2)*AngVelRight)*sampleTime;
         y_t = (((r*cos(theta_prime))/2)*AngVelLeft + ((r*cos(theta_prime))/2)*AngVelRight)*sampleTime;
+
         theta_t_unbounded = ((-r/b)*AngVelLeft + (r/b)*AngVelRight)*sampleTime;
         theta_t = angleBoundaries(theta_t_unbounded);
 
@@ -85,11 +86,22 @@ public:
     {
     	ras_arduino_msgs::Odometry odom_msg;
 
+        /*
+          if(state == Turn_Left)
+            theta_t = +pi/2
+            x_t, y_t should not change while turning
+          if(state == Turn_Right)
+            theta_t = -pi/2
+            x_t, y_t should not change while turning
+
+        */
+
         // odometry values should be "double"
         x_prime = x_prime + x_t;
         y_prime = y_prime + y_t;
         theta_prime_unbound = theta_prime_unbound + theta_t;
         //ROS_INFO("Ubounded theta %f", theta_prime_unbound);
+
         theta_prime = angleBoundaries(theta_prime_unbound);
         //ROS_INFO("theta_prime %f", theta_prime);
 
