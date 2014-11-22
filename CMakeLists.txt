@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(odometry_estimate)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
+## Find catkin and any catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+#  genmsg
 )
 
+## Generate added messages and services
+# sgenerate_messages(DEPENDENCIES std_msgs)
+
+## Declare a catkin package
 catkin_package(
 # CATKIN_DEPENDS message_runtime
 )
