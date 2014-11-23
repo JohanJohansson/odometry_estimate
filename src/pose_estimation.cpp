@@ -49,8 +49,6 @@ public:
 
     void encoderCallback(const ras_arduino_msgs::Encoders::ConstPtr &enc_msg)
     {
-        double enc1 = enc_msg->encoder1;
-        double enc2 = enc_msg->encoder2;
         double delta_enc1 = enc_msg->delta_encoder1;
         double delta_enc2 = enc_msg->delta_encoder2;
         double sampleTime = 0.1;
@@ -74,8 +72,8 @@ public:
 
 
         // Pose estimate according to formulas from file of Lab3
-        x_t = ((-(r*sin(theta_prime))/2)*AngVelLeft + (-(r*sin(theta_prime))/2)*AngVelRight)*sampleTime;
-        y_t = (((r*cos(theta_prime))/2)*AngVelLeft + ((r*cos(theta_prime))/2)*AngVelRight)*sampleTime;
+        x_t = ((-(r*sin(theta_prime))/2.0)*AngVelLeft + (-(r*sin(theta_prime))/2.0)*AngVelRight)*sampleTime;
+        y_t = (((r*cos(theta_prime))/2.0)*AngVelLeft + ((r*cos(theta_prime))/2.0)*AngVelRight)*sampleTime;
 
         theta_t_unbounded = ((-r/b)*AngVelLeft + (r/b)*AngVelRight)*sampleTime;
         theta_t = angleBoundaries(theta_t_unbounded);
@@ -99,16 +97,18 @@ public:
         // odometry values should be "double"
         x_prime = x_prime + x_t;
         y_prime = y_prime + y_t;
-        theta_prime_unbound = theta_prime_unbound + theta_t;
+        theta_prime = theta_prime + theta_t;
         //ROS_INFO("Ubounded theta %f", theta_prime_unbound);
-
-        theta_prime = angleBoundaries(theta_prime_unbound);
+        theta_prime = angleBoundaries(theta_prime);
         //ROS_INFO("theta_prime %f", theta_prime);
-
+        ROS_INFO("x_prime %f", x_prime);
+        ROS_INFO("y_prime %f", y_prime);
+        ROS_INFO("theta_prime %f", theta_prime);
         //Publish message
         odom_msg.x = x_prime;
         odom_msg.y = y_prime;
         odom_msg.theta = theta_prime;
+
 
     	odometry_publisher.publish(odom_msg);
     }
